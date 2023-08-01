@@ -26,6 +26,7 @@ function handleWeatherCode(code) {
 		61: { className: "fa-solid fa-cloud-rain", desc: "Rain" },
 		63: { className: "fa-solid fa-cloud-rain", desc: "Rain" },
 		65: { className: "fa-solid fa-cloud-rain", desc: "Rain" },
+		80: { className: "fa-solid fa-cloud-rain", desc: "Rain" },
 		95: { className: "fa-solid fa-cloud-bolt", desc: "Thunderstorm" },
 	};
 
@@ -36,6 +37,82 @@ function handleWeatherCode(code) {
 		}
 	);
 }
+
+function updateWeather() {
+	fetch(weatherApiUrl)
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			return response.json();
+		})
+		.then((data) => {
+			console.log(data);
+			if (data.current_weather.is_day == "0") {
+				document.getElementById("today-weather").className =
+					"bx bx-moon";
+				leftInfo.style.background = "url(night.jpg)";
+				leftInfo.style.backgroundPosition = "center";
+				leftInfo.style.backgroundSize = "cover";
+
+				weatherDesc.innerText = "Night";
+			} else {
+				localData = handleWeatherCode(data.current_weather.weathercode);
+				document.getElementById("today-weather").className =
+					localData.className;
+				weatherDesc.innerText = localData.desc;
+				leftInfo.style.background = localData.background;
+				leftInfo.style.backgroundPosition = "center";
+				leftInfo.style.backgroundSize = "cover";
+			}
+			todayTemp.innerText = `${data.current_weather.temperature}${data.daily_units.temperature_2m_max}`;
+			precipitation.innerText = `${data.daily.precipitation_probability_mean[0]} %`;
+			rain.innerText = `${data.daily.rain_sum[0]} mm`;
+			wind.innerText = `${data.current_weather.windspeed} km/h`;
+			for (i = 0; i <= 3; i++) {
+				nextDays[i].innerText = weekDays[(dayOfWeek + i + 1) % 7].slice(
+					0,
+					3
+				);
+				nextDaysTemp[i].innerText = `${
+					data.daily.temperature_2m_max[i + 1]
+				}${data.daily_units.temperature_2m_max}`;
+				localData = handleWeatherCode(data.daily.weathercode[i + 1]);
+				document.getElementById(`forecast-${i + 1}`).className =
+					localData.className;
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+		});
+}
+
+function getCoordinates() {
+	const city = prompt("Select a city:");
+	coordinatesApiUrl = `https://api.api-ninjas.com/v1/geocoding?city=${city}`;
+	fetch(coordinatesApiUrl, {
+		method: "GET",
+		headers: {
+			"X-Api-Key": "raagi7mLF1uDiEjo+gSEZg==Z7zSaBRvP3mbnolA",
+			"Content-Type": "application/json",
+		},
+	})
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(response.error);
+			}
+			return response.json();
+		})
+		.then((data) => {
+			console.log(data);
+			weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${data[0].latitude}&longitude=${data[0].longitude}&daily=weathercode,temperature_2m_max,rain_sum,precipitation_probability_mean,windspeed_10m_max&current_weather=true&timezone=auto`;
+			document.querySelector(
+				".location"
+			).innerText = `${data[0].name}, ${data[0].country}`;
+			updateWeather();
+		});
+}
+
 const date = new Date();
 const btn = document.querySelector(".loc-button");
 const weekDay = document.querySelector(".week-day");
@@ -80,54 +157,9 @@ todayDate.innerText = `${date.getDate()} ${
 	months[monthIndex]
 } ${date.getFullYear()}`;
 
-const apiUrl =
-	"https://api.open-meteo.com/v1/forecast?latitude=50.0413&longitude=21.999&daily=weathercode,temperature_2m_max,rain_sum,precipitation_probability_mean,windspeed_10m_max&current_weather=true&timezone=auto";
+let coordinatesApiUrl = "";
+let weatherApiUrl = "";
 
 btn.addEventListener("click", () => {
-	fetch(apiUrl)
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error("Network response was not ok");
-			}
-			return response.json();
-		})
-		.then((data) => {
-			console.log(data);
-			if (data.current_weather.is_day === "0") {
-				document.getElementById("today-weather").className =
-					"bx bx-moon";
-				leftInfo.style.background = "url(night.jpg)";
-				leftInfo.style.backgroundPosition = "center";
-				leftInfo.style.backgroundSize = "cover";
-
-				weatherDesc.innerText = "Night";
-			} else {
-				localData = handleWeatherCode(data.current_weather.weathercode);
-				document.getElementById("today-weather").className =
-					localData.className;
-				weatherDesc.innerText = localData.desc;
-				leftInfo.style.background = localData.background;
-				leftInfo.style.backgroundPosition = "center";
-				leftInfo.style.backgroundSize = "cover";
-			}
-			todayTemp.innerText = `${data.current_weather.temperature}${data.daily_units.temperature_2m_max}`;
-			precipitation.innerText = `${data.daily.precipitation_probability_mean[0]} %`;
-			rain.innerText = `${data.daily.rain_sum[0]} mm`;
-			wind.innerText = `${data.current_weather.windspeed} km/h`;
-			for (i = 0; i <= 3; i++) {
-				nextDays[i].innerText = weekDays[(dayOfWeek + i + 1) % 7].slice(
-					0,
-					3
-				);
-				nextDaysTemp[i].innerText = `${
-					data.daily.temperature_2m_max[i + 1]
-				}${data.daily_units.temperature_2m_max}`;
-				localData = handleWeatherCode(data.daily.weathercode[i + 1]);
-				document.getElementById(`forecast-${i + 1}`).className =
-					localData.className;
-			}
-		})
-		.catch((error) => {
-			console.error(error);
-		});
+	getCoordinates();
 });
