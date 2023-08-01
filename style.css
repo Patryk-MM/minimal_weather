@@ -30,7 +30,6 @@ body {
 	display: flex;
 	border-radius: 25px;
 	justify-content: center;
-	background: url(1.jpg);
 	background-position: center;
 	background-size: cover;
 	transform: scale(1.03) perspective(200px);
@@ -70,7 +69,7 @@ body {
 
 }
 
-.today-weather .bx {
+.today-weather .fa-solid{
 	font-size: 4.6rem;
 }
 
